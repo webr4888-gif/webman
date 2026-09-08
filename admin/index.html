@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>webr48 — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+  <style>canvas{max-width:100%}</style>
+</head>
+<body>
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <h2 style="margin:0 0 6px">webr48 Admin</h2>
+      <p class="muted" style="margin:0 0 14px">Single-owner dashboard. Default: admin / admin123</p>
+      <div class="field"><label>Username</label><input name="username" value="admin" required /></div>
+      <div class="field" style="margin-top:10px"><label>Password</label><input name="password" type="password" value="admin123" required /></div>
+      <div id="loginErr" class="muted" style="color:#ef4444;margin-top:8px"></div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:12px">Sign in →</button>
+    </form>
+  </div>
+
+  <div id="appView" class="hidden">
+    <div class="topbar">
+      <b>webr48 — Admin</b>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="userLabel" class="muted" style="color:#cbd5e1"></span>
+        <a href="/" target="_blank" class="btn btn-sm" style="text-decoration:none">View site ↗</a>
+        <button id="logoutBtn" class="btn btn-sm">Logout</button>
+      </div>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <button class="side-btn active" data-tab="content">Content</button>
+        <button class="side-btn" data-tab="media">Media</button>
+        <button class="side-btn" data-tab="leads">Leads</button>
+        <button class="side-btn" data-tab="analytics">Analytics</button>
+        <button class="side-btn" data-tab="theme">Theme & Settings</button>
+      </nav>
+      <main class="main">
+        <!-- CONTENT -->
+        <section id="tab-content">
+          <div class="card"><h3>Hero & Global</h3><div id="contentForm" class="grid2"></div><button id="saveContent" class="btn btn-primary" style="margin-top:12px">Save content</button><span id="saveMsg" class="muted" style="margin-left:8px"></span></div>
+          <div class="card"><h3>How it works</h3><div id="howForm" class="grid2"></div></div>
+          <div class="card"><h3>Pricing</h3><div id="pricingForm" class="grid2"></div></div>
+          <div class="card"><h3>Testimonials (JSON)</h3><div class="field"><label>Array of {name, role, quote, photo}</label><textarea id="testimonialsJson" rows="6"></textarea></div></div>
+          <div class="card"><h3>FAQ (JSON)</h3><div class="field"><label>Array of {q, a}</label><textarea id="faqJson" rows="6"></textarea></div></div>
+        </section>
+
+        <!-- MEDIA -->
+        <section id="tab-media" class="hidden">
+          <div class="card">
+            <h3>Upload</h3>
+            <div class="grid2">
+              <div class="field"><label>Category</label><select id="upCategory"><option value="portfolio">portfolio</option><option value="sales_proof">sales_proof</option></select></div>
+              <div class="field"><label>Caption</label><input id="upCaption" placeholder="e.g. Fashion store — 3.2% conversion" /></div>
+              <div class="field"><label>Image file</label><input id="upFile" type="file" accept="image/*" /></div>
+              <div class="field"><label>Or image URL</label><input id="upUrl" placeholder="https://..." /></div>
+            </div>
+            <button id="upBtn" class="btn btn-primary" style="margin-top:12px">Upload</button><span id="upMsg" class="muted" style="margin-left:8px"></span>
+          </div>
+          <div class="card"><h3>Portfolio</h3><div id="portfolioAdmin" class="gallery-admin"></div></div>
+          <div class="card"><h3>Sales Proof</h3><div id="salesAdmin" class="gallery-admin"></div></div>
+        </section>
+
+        <!-- LEADS -->
+        <section id="tab-leads" class="hidden">
+          <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="leadSearch" placeholder="Search name, email, whatsapp…" style="flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0" />
+            <select id="leadFilterScam"><option value="">All — scammed?</option><option value="yes">Yes</option><option value="no">No</option></select>
+            <select id="leadFilterStatus"><option value="">All statuses</option><option value="new">new</option><option value="contacted">contacted</option><option value="booked">booked</option><option value="closed">closed</option></select>
+            <a id="exportCsv" class="btn">Export CSV</a>
+          </div>
+          <div class="card table-wrap"><table><thead><tr><th>Name</th><th>Store</th><th>Budget</th><th>Status</th><th>Scammed</th><th>WhatsApp</th><th>Email</th><th>Source</th><th>Webhook</th><th>Lead status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="leadsBody"></tbody></table></div>
+        </section>
+
+        <!-- ANALYTICS -->
+        <section id="tab-analytics" class="hidden">
+          <div class="kpi">
+            <div class="card"><span class="muted">Pageviews</span><b id="kpiViews">—</b></div>
+            <div class="card"><span class="muted">Unique visitors</span><b id="kpiVisitors">—</b></div>
+            <div class="card"><span class="muted">CTA clicks</span><b id="kpiCta">—</b></div>
+            <div class="card"><span class="muted">Leads</span><b id="kpiLeads">—</b></div>
+          </div>
+          <div class="card"><h3>Funnel</h3><div class="grid2"><div>Form starts: <b id="kpiStarts">—</b></div><div>Form submits: <b id="kpiSubmits">—</b></div><div>Drop-off: <b id="kpiDrop">—</b></div><div>Total events: <b id="kpiEvents">—</b></div></div></div>
+          <div class="card"><h3>Click breakdown</h3><div id="byElement"></div></div>
+          <div class="card"><h3>Traffic source</h3><div id="bySource"></div></div>
+          <div class="card"><h3>Daily events</h3><canvas id="chart" width="800" height="220" style="width:100%;height:220px;border:1px solid #e2e8f0;border-radius:10px"></canvas></div>
+          <div class="card"><h3>Recent events</h3><div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>Element</th><th>Session</th><th>Page</th></tr></thead><tbody id="eventsBody"></tbody></table></div></div>
+        </section>
+
+        <!-- THEME -->
+        <section id="tab-theme" class="hidden">
+          <div class="card grid2">
+            <div class="field"><label>Primary color</label><input id="thPrimary" type="color" /></div>
+            <div class="field"><label>Accent color</label><input id="thAccent" type="color" /></div>
+            <div class="field"><label>Background</label><input id="thBg" type="color" /></div>
+            <div class="field"><label>Text color</label><input id="thText" type="color" /></div>
+            <div class="field"><label>Button color</label><input id="thButton" type="color" /></div>
+            <div class="field"><label>Font</label><select id="thFont"><option>Inter</option><option>Poppins</option><option>Space Grotesk</option><option>DM Sans</option><option>Outfit</option></select></div>
+            <div class="field"><label>WhatsApp number (digits only)</label><input id="thWa" placeholder="2348123456789" /></div>
+            <div class="field"><label>Booking link</label><input id="thBook" placeholder="https://calendly.com/..." /></div>
+            <div class="field"><label>Urgency banner enabled</label><select id="thUrgEn"><option value="false">false</option><option value="true">true</option></select></div>
+            <div class="field"><label>Urgency text</label><input id="thUrgText" placeholder="⚡ 2 slots left…" /></div>
+            <div class="field"><label>Change password — current</label><input id="pwCur" type="password" /></div>
+            <div class="field"><label>New password</label><input id="pwNew" type="password" /></div>
+          </div>
+          <button id="saveTheme" class="btn btn-primary">Save theme</button>
+          <button id="changePw" class="btn" style="margin-left:8px">Change password</button>
+          <span id="themeMsg" class="muted" style="margin-left:8px"></span>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/admin/js/admin.js"></script>
+</body>
+</html>

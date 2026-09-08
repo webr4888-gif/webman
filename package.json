@@ -1,0 +1,23 @@
+{
+  "name": "webr48-dropshipping-store",
+  "version": "1.0.0",
+  "description": "webr48 — Done-for-you dropshipping websites. Public frontend + admin backend.",
+  "type": "commonjs",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "init-db": "node server/init-db.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.2.2"
+  }
+}
