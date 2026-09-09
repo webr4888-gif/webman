@@ -14,8 +14,6 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'webr48-dev-secret-change-me';
 const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://ultimmatenexatech-hugging8n.hf.space/webhook/dropshipping-form';
 
-initDb();
-
 // ---------- middleware ----------
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -72,92 +70,80 @@ function authMiddleware(req, res, next) {
 }
 
 // ---------- helpers ----------
-function getAllContent() {
-  const rows = db.prepare('SELECT key, value FROM content').all();
+async function getAllContent() {
+  const rows = await db.prepare('SELECT key, value FROM content').all();
   const obj = {};
   for (const r of rows) {
     try { obj[r.key] = JSON.parse(r.value); } catch { obj[r.key] = r.value; }
   }
-  // if value was stored as plain string without JSON, keep string
   return obj;
 }
-function getContentValue(key) {
-  const row = db.prepare('SELECT value FROM content WHERE key = ?').get(key);
+async function getContentValue(key) {
+  const row = await db.prepare('SELECT value FROM content WHERE key = ?').get(key);
   if (!row) return null;
   try { return JSON.parse(row.value); } catch { return row.value; }
 }
 
 // ---------- API: content ----------
-app.get('/api/content', (req, res) => {
-  res.json(getAllContent());
+app.get('/api/content', async (req, res) => {
+  res.json(await getAllContent());
 });
 
-app.put('/api/content', authMiddleware, (req, res) => {
+app.put('/api/content', authMiddleware, async (req, res) => {
   const body = req.body;
   if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid body' });
-  const stmt = db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)');
-  // handle SQLite fallback which uses INSERT OR REPLACE syntax? fallback's prepare handles it
-  // For better-sqlite3 with OR REPLACE we need correct syntax
-  // Safer: try both
   for (const [k, v] of Object.entries(body)) {
     const val = typeof v === 'string' ? v : JSON.stringify(v);
-    try {
-      db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, val);
-    } catch (e) {
-      // fallback uses same
-      db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, val);
-    }
+    await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, val);
   }
-  res.json({ ok: true, content: getAllContent() });
+  res.json({ ok: true, content: await getAllContent() });
 });
 
 // single key update
-app.put('/api/content/:key', authMiddleware, (req, res) => {
+app.put('/api/content/:key', authMiddleware, async (req, res) => {
   const { key } = req.params;
   const { value } = req.body;
   if (value === undefined) return res.status(400).json({ error: 'Missing value' });
   const val = typeof value === 'string' ? value : JSON.stringify(value);
-  db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(key, val);
+  await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(key, val);
   res.json({ ok: true, key, value });
 });
 
 // ---------- API: media ----------
-app.get('/api/media', (req, res) => {
+app.get('/api/media', async (req, res) => {
   const { category } = req.query;
   let rows;
-  if (category) rows = db.prepare('SELECT * FROM media WHERE category = ? ORDER BY sort_order ASC').all(category);
-  else rows = db.prepare('SELECT * FROM media ORDER BY category, sort_order ASC').all();
+  if (category) rows = await db.prepare('SELECT * FROM media WHERE category = ? ORDER BY sort_order ASC').all(category);
+  else rows = await db.prepare('SELECT * FROM media ORDER BY category, sort_order ASC').all();
   res.json(rows);
 });
 
-app.post('/api/media', authMiddleware, upload.single('image'), (req, res) => {
+app.post('/api/media', authMiddleware, upload.single('image'), async (req, res) => {
   const { category, caption } = req.body;
   if (!category || !['portfolio','sales_proof'].includes(category)) return res.status(400).json({ error: 'Invalid category' });
-  // if file uploaded use it, else expect url in body
   let url = req.body.url;
   if (req.file) url = '/uploads/' + req.file.filename;
   if (!url) return res.status(400).json({ error: 'Missing image url or file' });
-  // next sort_order
-  const all = db.prepare('SELECT * FROM media WHERE category = ?').all(category);
+  const all = await db.prepare('SELECT * FROM media WHERE category = ?').all(category);
   const maxOrder = all.length ? Math.max(...all.map(m=>m.sort_order||0)) : 0;
-  const result = db.prepare('INSERT INTO media (category, url, caption, sort_order) VALUES (?, ?, ?, ?)').run(category, url, caption||'', maxOrder+1);
+  const result = await db.prepare('INSERT INTO media (category, url, caption, sort_order) VALUES (?, ?, ?, ?)').run(category, url, caption||'', maxOrder+1);
   const id = result.lastInsertRowid;
-  const row = db.prepare('SELECT * FROM media WHERE id = ?').get(id) || { id, category, url, caption, sort_order: maxOrder+1 };
+  const row = await db.prepare('SELECT * FROM media WHERE id = ?').get(id) || { id, category, url, caption, sort_order: maxOrder+1 };
   res.json(row);
 });
 
-app.delete('/api/media/:id', authMiddleware, (req, res) => {
+app.delete('/api/media/:id', authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
-  db.prepare('DELETE FROM media WHERE id = ?').run(id);
+  await db.prepare('DELETE FROM media WHERE id = ?').run(id);
   res.json({ ok: true });
 });
 
-app.put('/api/media/reorder', authMiddleware, (req, res) => {
-  const { orderedIds } = req.body; // array of ids in desired order
+app.put('/api/media/reorder', authMiddleware, async (req, res) => {
+  const { orderedIds } = req.body;
   if (!Array.isArray(orderedIds)) return res.status(400).json({ error: 'orderedIds required' });
-  orderedIds.forEach((id, idx) => {
-    db.prepare('UPDATE media SET sort_order = ? WHERE id = ?').run(idx+1, Number(id));
-  });
+  for (let idx = 0; idx < orderedIds.length; idx++) {
+    await db.prepare('UPDATE media SET sort_order = ? WHERE id = ?').run(idx+1, Number(orderedIds[idx]));
+  }
   res.json({ ok: true });
 });
 
@@ -165,16 +151,14 @@ app.put('/api/media/reorder', authMiddleware, (req, res) => {
 app.post('/api/leads', leadLimiter, async (req, res) => {
   const {
     name, storeName, budget, storeStatus, wasScammed, scamDetails,
-    whatsapp, email, source, consent, website, // honeypot
+    whatsapp, email, source, consent, website,
     pageUrl, contactTime, hearAbout
   } = req.body;
 
-  // honeypot
   if (website) {
     return res.status(200).json({ ok: true, message: 'Thanks! We will be in touch.' });
   }
 
-  // validation
   const errors = [];
   if (!name || String(name).trim().length < 2) errors.push('Full name required');
   if (!storeName || String(storeName).trim().length < 1) errors.push('Preferred store name required');
@@ -201,12 +185,11 @@ app.post('/api/leads', leadLimiter, async (req, res) => {
     submittedAt: new Date().toISOString()
   };
 
-  // sanitize before storing (prevent stored XSS — escape will be done on render, but also strip tags)
   const esc = (s) => String(s).replace(/[<>]/g, '');
 
   let leadId;
   try {
-    const r = db.prepare(`INSERT INTO leads (name, store_name, budget, store_status, was_scammed, scam_details, whatsapp, email, source, consent, page_url, webhook_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    const r = await db.prepare(`INSERT INTO leads (name, store_name, budget, store_status, was_scammed, scam_details, whatsapp, email, source, consent, page_url, webhook_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       esc(clean.name), esc(clean.storeName), esc(clean.budget), clean.storeStatus, clean.wasScammed, esc(clean.scamDetails), esc(clean.whatsapp), esc(clean.email), esc(clean.source), clean.consent ? 1 : 0, esc(clean.pageUrl), 'pending'
     );
     leadId = r.lastInsertRowid;
@@ -215,7 +198,6 @@ app.post('/api/leads', leadLimiter, async (req, res) => {
     return res.status(500).json({ error: 'Failed to save lead' });
   }
 
-  // webhook payload — also forward extra fields
   const payload = {
     name: clean.name,
     storeName: clean.storeName,
@@ -233,7 +215,6 @@ app.post('/api/leads', leadLimiter, async (req, res) => {
     hearAbout: hearAbout || ''
   };
 
-  // async webhook with retries
   (async () => {
     let status = 'failed';
     for (let attempt=1; attempt<=3; attempt++) {
@@ -254,32 +235,31 @@ app.post('/api/leads', leadLimiter, async (req, res) => {
       }
       if (attempt < 3) await new Promise(r=>setTimeout(r, attempt*1500));
     }
-    try { db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(status, leadId); } catch {}
+    try { await db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(status, leadId); } catch {}
   })();
 
-  // log event funnel: form_submit
-  try { db.prepare('INSERT INTO events (event_type, element_id, session_id, page_url, meta) VALUES (?, ?, ?, ?, ?)').run('form_submit', 'lead_form', req.headers['x-session-id']||'unknown', clean.pageUrl, JSON.stringify({ leadId })); } catch {}
+  try { await db.prepare('INSERT INTO events (event_type, element_id, session_id, page_url, meta) VALUES (?, ?, ?, ?, ?)').run('form_submit', 'lead_form', req.headers['x-session-id']||'unknown', clean.pageUrl, JSON.stringify({ leadId })); } catch {}
 
   res.json({ ok: true, message: "Thanks! We'll reach out on WhatsApp within 24 hours", leadId });
 });
 
-app.get('/api/leads', authMiddleware, (req, res) => {
-  const rows = db.prepare('SELECT * FROM leads ORDER BY created_at DESC').all();
+app.get('/api/leads', authMiddleware, async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM leads ORDER BY created_at DESC').all();
   res.json(rows);
 });
 
-app.patch('/api/leads/:id', authMiddleware, (req, res) => {
+app.patch('/api/leads/:id', authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const { status, webhook_status } = req.body;
-  if (status) db.prepare('UPDATE leads SET status = ? WHERE id = ?').run(String(status), id);
-  if (webhook_status) db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(String(webhook_status), id);
-  const row = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
+  if (status) await db.prepare('UPDATE leads SET status = ? WHERE id = ?').run(String(status), id);
+  if (webhook_status) await db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(String(webhook_status), id);
+  const row = await db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
   res.json(row || { ok: true });
 });
 
 app.post('/api/leads/:id/retry-webhook', authMiddleware, async (req,res)=>{
   const id = Number(req.params.id);
-  const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
+  const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
   if (!lead) return res.status(404).json({ error: 'Lead not found' });
   const payload = {
     name: lead.name,
@@ -298,16 +278,16 @@ app.post('/api/leads/:id/retry-webhook', authMiddleware, async (req,res)=>{
   try {
     const resp = await fetch(WEBHOOK_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const status = resp.ok ? 'sent' : 'failed';
-    db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(status, id);
+    await db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run(status, id);
     res.json({ ok: resp.ok, webhook_status: status });
   } catch(e){
-    db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run('failed', id);
+    await db.prepare('UPDATE leads SET webhook_status = ? WHERE id = ?').run('failed', id);
     res.status(502).json({ error: e.message, webhook_status: 'failed' });
   }
 });
 
-app.get('/api/leads/export/csv', authMiddleware, (req,res)=>{
-  const rows = db.prepare('SELECT * FROM leads ORDER BY created_at DESC').all();
+app.get('/api/leads/export/csv', authMiddleware, async (req,res)=>{
+  const rows = await db.prepare('SELECT * FROM leads ORDER BY created_at DESC').all();
   const headers = ['id','name','store_name','budget','store_status','was_scammed','scam_details','whatsapp','email','source','consent','page_url','webhook_status','status','submitted_at','created_at'];
   const escCsv = v=> `"${String(v??'').replace(/"/g,'""')}"`;
   let csv = headers.join(',')+'\n';
@@ -318,22 +298,21 @@ app.get('/api/leads/export/csv', authMiddleware, (req,res)=>{
 });
 
 // ---------- API: events / analytics ----------
-app.post('/api/events', (req, res)=>{
+app.post('/api/events', async (req, res)=>{
   const { event_type, element_id, sessionId, pageUrl, meta } = req.body;
   if (!event_type) return res.status(400).json({ error: 'event_type required' });
   const sid = String(sessionId || req.headers['x-session-id'] || 'anon').slice(0,100);
   const eid = String(element_id || '').slice(0,200);
   const purl = String(pageUrl || req.headers.referer || '').slice(0,500);
   const m = meta ? JSON.stringify(meta).slice(0,2000) : null;
-  db.prepare('INSERT INTO events (event_type, element_id, session_id, page_url, meta) VALUES (?, ?, ?, ?, ?)').run(String(event_type).slice(0,50), eid, sid, purl, m);
+  await db.prepare('INSERT INTO events (event_type, element_id, session_id, page_url, meta) VALUES (?, ?, ?, ?, ?)').run(String(event_type).slice(0,50), eid, sid, purl, m);
   res.json({ ok: true });
 });
 
-app.get('/api/analytics', authMiddleware, (req,res)=>{
-  const events = db.prepare('SELECT * FROM events').all();
-  const leads = db.prepare('SELECT * FROM leads').all();
+app.get('/api/analytics', authMiddleware, async (req,res)=>{
+  const events = await db.prepare('SELECT * FROM events').all();
+  const leads = await db.prepare('SELECT * FROM leads').all();
 
-  // aggregate
   const byDay = {};
   const byType = {};
   const byElement = {};
@@ -374,10 +353,10 @@ app.get('/api/analytics', authMiddleware, (req,res)=>{
 });
 
 // ---------- API: auth ----------
-app.post('/api/auth/login', loginLimiter, (req,res)=>{
+app.post('/api/auth/login', loginLimiter, async (req,res)=>{
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
-  const user = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(String(username));
+  const user = await db.prepare('SELECT * FROM admin_users WHERE username = ?').get(String(username));
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
   const ok = bcrypt.compareSync(String(password), user.password_hash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
@@ -389,50 +368,54 @@ app.get('/api/auth/me', authMiddleware, (req,res)=>{
   res.json({ user: req.user });
 });
 
-app.post('/api/auth/change-password', authMiddleware, (req,res)=>{
+app.post('/api/auth/change-password', authMiddleware, async (req,res)=>{
   const { currentPassword, newPassword } = req.body;
   if (!newPassword || String(newPassword).length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
-  const user = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
+  const user = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
   if (!bcrypt.compareSync(String(currentPassword||''), user.password_hash)) return res.status(401).json({ error: 'Current password incorrect' });
   const hash = bcrypt.hashSync(String(newPassword), 10);
-  // update
   try {
-    // better-sqlite3 supports direct exec; fallback handles via run
-    db.prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
-    // fallback store update if pragma fails — patch fallback directly
+    await db.prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
     if (db._store) {
       const u = db._store.admin_users.find(x=>x.id===req.user.id);
       if (u) u.password_hash = hash;
-      const fs2 = require('fs'); const path2 = require('path');
-      fs2.writeFileSync(path2.join(__dirname,'data','fallback.json'), JSON.stringify(db._store,null,2));
+      fs.writeFileSync(path.join(__dirname,'data','fallback.json'), JSON.stringify(db._store,null,2));
     }
   } catch(e){
-    // for fallback db which doesn't have UPDATE admin_users handler yet, patch manually
     if (db._store) {
       const u = db._store.admin_users.find(x=>x.id===req.user.id);
-      if (u) { u.password_hash = hash; require('fs').writeFileSync(require('path').join(__dirname,'data','fallback.json'), JSON.stringify(db._store,null,2)); }
+      if (u) { u.password_hash = hash; fs.writeFileSync(path.join(__dirname,'data','fallback.json'), JSON.stringify(db._store,null,2)); }
     }
   }
   res.json({ ok: true });
 });
 
 // ---------- static ----------
-// Serve frontend at /
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
 
-// Fallback: for SPA routing, serve index.html for non-API routes
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   if (req.path.startsWith('/admin')) return res.sendFile(path.join(__dirname, '..', 'admin', 'index.html'));
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.listen(PORT, ()=> {
-  console.log(`[webr48] Server running on http://localhost:${PORT}`);
-  console.log(`[webr48] Frontend: http://localhost:${PORT}/`);
-  console.log(`[webr48] Admin:    http://localhost:${PORT}/admin  (admin / admin123)`);
-});
+async function start() {
+  try {
+    await initDb();
+    app.listen(PORT, ()=> {
+      console.log(`[webr48] Server running on http://localhost:${PORT}`);
+      console.log(`[webr48] Frontend: http://localhost:${PORT}/`);
+      console.log(`[webr48] Admin:    http://localhost:${PORT}/admin  (admin / admin123)`);
+      if (process.env.DATABASE_URL) console.log('[DB] Postgres persistent storage enabled');
+    });
+  } catch (e) {
+    console.error('[DB] init failed', e);
+    process.exit(1);
+  }
+}
+start();
 
 module.exports = app;
