@@ -40,7 +40,7 @@
         <a id="heroWhatsapp" class="btn btn-ghost" href="#" target="_blank" rel="noopener" data-track="hero-whatsapp">Chat on WhatsApp</a>
       </div>
       <div class="hero-trust">
-        <span>★ 4.9/5 average</span>
+        <span id="heroStars">★ 4.9/5 average</span>
         <span>•</span>
         <span id="trustLine"><strong>127</strong> stores launched • <strong>₦48M+</strong> verified sales</span>
       </div>
@@ -52,11 +52,11 @@
       <div class="hero-float">
         <div style="width:42px;height:42px;border-radius:10px;background:#f1f5f9;display:grid;place-items:center">🛒</div>
         <div>
-          <div style="font-weight:700;font-size:13px">Live store preview</div>
-          <div style="color:#64748b;font-size:12px">Checkout tested • Mobile ready</div>
+          <div id="heroFloatTitle" style="font-weight:700;font-size:13px">Live store preview</div>
+          <div id="heroFloatSub" style="color:#64748b;font-size:12px">Checkout tested • Mobile ready</div>
         </div>
         <div style="margin-left:auto;text-align:right">
-          <b style="color:#16a34a">3.2%</b><div style="font-size:11px;color:#64748b">conversion</div>
+          <b id="heroFloatStat" style="color:#16a34a">3.2%</b><div id="heroFloatLabel" style="font-size:11px;color:#64748b">conversion</div>
         </div>
       </div>
     </div>
@@ -125,7 +125,7 @@
           <a class="btn btn-ghost" href="#lead" data-track="pricing-starter">Get Started</a>
         </div>
         <div class="price-card featured">
-          <div class="pill" style="align-self:flex-start;background:#6C5CE7;color:#fff;border-color:#6C5CE7">Most popular</div>
+          <div id="pricingProPill" class="pill" style="align-self:flex-start;background:#6C5CE7;color:#fff;border-color:#6C5CE7">Most popular</div>
           <h3 id="priceProN" style="margin-top:10px">Pro — Most Popular</h3>
           <div class="price" id="priceProP">₦220,000</div>
           <ul id="priceProF"></ul>
@@ -254,17 +254,17 @@
         </form>
 
         <div class="lead-side">
-          <h3>Why founders choose webr48</h3>
-          <p>We reply fast, build fast, and you own everything.</p>
-          <div class="tick"><i>✓</i><span><strong>50/50 payment</strong> — half upfront, half after you approve the preview.</span></div>
-          <div class="tick"><i>✓</i><span><strong>You own the store</strong> — Shopify, domain, suppliers all in your name.</span></div>
-          <div class="tick"><i>✓</i><span><strong>Ad-ready</strong> — creatives + launch checklist included in Pro.</span></div>
-          <div class="tick"><i>✓</i><span><strong>Real support</strong> — we respond within hours, even on weekends.</span></div>
+          <h3 id="leadSideHeading">Why founders choose webr48</h3>
+          <p id="leadSideSub">We reply fast, build fast, and you own everything.</p>
+          <div class="tick"><i>✓</i><span id="leadTick1"><strong>50/50 payment</strong> — half upfront, half after you approve the preview.</span></div>
+          <div class="tick"><i>✓</i><span id="leadTick2"><strong>You own the store</strong> — Shopify, domain, suppliers all in your name.</span></div>
+          <div class="tick"><i>✓</i><span id="leadTick3"><strong>Ad-ready</strong> — creatives + launch checklist included in Pro.</span></div>
+          <div class="tick"><i>✓</i><span id="leadTick4"><strong>Real support</strong> — we respond within hours, even on weekends.</span></div>
           <div style="margin-top:18px;display:grid;gap:10px">
             <a id="sideWhatsapp" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" data-track="lead-whatsapp">💬 Chat on WhatsApp instead</a>
             <a id="sideBook" class="btn btn-ghost" href="#" target="_blank" rel="noopener" data-track="lead-book">📅 Book a call directly</a>
           </div>
-          <p style="margin-top:14px;font-size:12px;color:#94a3b8">Avg response: 2 hours • No spam, ever.</p>
+          <p id="leadSideFooter" style="margin-top:14px;font-size:12px;color:#94a3b8">Avg response: 2 hours • No spam, ever.</p>
         </div>
       </div>
     </div>
@@ -278,11 +278,11 @@
           <div class="foot-muted" id="footerAbout">webr48 builds done-for-you dropshipping stores that are ready to sell on day one.</div>
         </div>
         <div>
-          <div style="font-weight:700;color:#fff;margin-bottom:8px">Contact</div>
+          <div id="footerContactTitle" style="font-weight:700;color:#fff;margin-bottom:8px">Contact</div>
           <div class="foot-muted"><span id="footerEmail">hello@webr48.com</span><br /><a id="footerWhatsapp" href="#" target="_blank">WhatsApp</a></div>
         </div>
         <div>
-          <div style="font-weight:700;color:#fff;margin-bottom:8px">Links</div>
+          <div id="footerLinksTitle" style="font-weight:700;color:#fff;margin-bottom:8px">Links</div>
           <div class="foot-muted">
             <a href="#portfolio">Portfolio</a> • <a href="#pricing">Pricing</a> • <a href="#faq">FAQ</a><br />
             <a href="/admin">Admin</a>

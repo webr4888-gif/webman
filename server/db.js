@@ -107,6 +107,13 @@ if (usePostgres) {
     if (!store.content || Object.keys(store.content).length === 0) {
       store.content = defaultContent;
       saveFallback(store);
+    } else {
+      // merge new seed keys without overwriting existing custom values
+      let added = 0;
+      for (const [k, v] of Object.entries(defaultContent)) {
+        if (!(k in store.content)) { store.content[k] = v; added++; }
+      }
+      if (added) { saveFallback(store); console.log(`[DB] Added ${added} new content keys to fallback`); }
     }
     if (!store.admin_users || store.admin_users.length === 0) {
       const bcrypt = require('bcryptjs');
@@ -323,6 +330,15 @@ async function initDb() {
         await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, typeof v === 'string' ? v : JSON.stringify(v));
       }
       console.log('[DB] Seeded Postgres content');
+    } else {
+      // add any new seed keys that are missing (makes everything editable after updates)
+      for (const [k, v] of Object.entries(seed)) {
+        const row = await db.prepare('SELECT value FROM content WHERE key = ?').get(k);
+        if (!row) {
+          await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, typeof v === 'string' ? v : JSON.stringify(v));
+          console.log(`[DB] Added missing Postgres key: ${k}`);
+        }
+      }
     }
     const adminCount = await db.prepare('SELECT COUNT(*) as c FROM admin_users').get();
     if (Number(adminCount.c) === 0) {
@@ -403,6 +419,11 @@ async function initDb() {
     const stmt = db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)');
     for (const [k, v] of Object.entries(seed)) {
       stmt.run(k, typeof v === 'string' ? v : JSON.stringify(v));
+    }
+  } else {
+    for (const [k, v] of Object.entries(seed)) {
+      const row = db.prepare('SELECT value FROM content WHERE key = ?').get(k);
+      if (!row) db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run(k, typeof v === 'string' ? v : JSON.stringify(v));
     }
   }
   const adminCount = db.prepare('SELECT COUNT(*) as c FROM admin_users').get();

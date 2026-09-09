@@ -40,11 +40,17 @@
       <main class="main">
         <!-- CONTENT -->
         <section id="tab-content">
-          <div class="card"><h3>Hero & Global</h3><div id="contentForm" class="grid2"></div><button id="saveContent" class="btn btn-primary" style="margin-top:12px">Save content</button><span id="saveMsg" class="muted" style="margin-left:8px"></span></div>
+          <div class="card"><h3>Hero & Global</h3><div id="contentForm" class="grid2"></div></div>
+          <div class="card"><h3>Navigation & Branding</h3><div id="navForm" class="grid2"></div></div>
+          <div class="card"><h3>Hero Extras (float card + trust)</h3><div id="heroExtrasForm" class="grid2"></div></div>
           <div class="card"><h3>How it works</h3><div id="howForm" class="grid2"></div></div>
           <div class="card"><h3>Pricing</h3><div id="pricingForm" class="grid2"></div></div>
+          <div class="card"><h3>Lead Side Panel</h3><div id="leadSideForm" class="grid2"></div></div>
+          <div class="card"><h3>Footer</h3><div id="footerForm" class="grid2"></div></div>
           <div class="card"><h3>Testimonials (JSON)</h3><div class="field"><label>Array of {name, role, quote, photo}</label><textarea id="testimonialsJson" rows="6"></textarea></div></div>
           <div class="card"><h3>FAQ (JSON)</h3><div class="field"><label>Array of {q, a}</label><textarea id="faqJson" rows="6"></textarea></div></div>
+          <div class="card"><h3>Everything else (auto)</h3><p class="muted" style="font-size:12px;margin:0 0 8px">Any content key not listed above appears here. Add new keys via API and they show up automatically — truly everything is editable.</p><div id="advancedForm" class="grid2"></div></div>
+          <div style="position:sticky;bottom:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;gap:8px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.08)"><button id="saveContent" class="btn btn-primary">Save all content</button><span id="saveMsg" class="muted"></span><span class="muted" style="margin-left:auto;font-size:12px">All fields above are saved together</span></div>
         </section>
 
         <!-- MEDIA -->

@@ -54,7 +54,6 @@ document.querySelectorAll('.side-btn').forEach(b=>{
 let contentCache={};
 const contentFields=[
   ['site_logo_text','Logo text'],
-  ['site_tagline','Tagline'],
   ['cta_book_label','CTA Book label'],
   ['cta_whatsapp_label','CTA WhatsApp label'],
   ['hero_headline','Hero headline'],
@@ -83,11 +82,26 @@ const contentFields=[
   ['pricing_starter_price','Starter price'],
   ['pricing_pro_name','Pro name'],
   ['pricing_pro_price','Pro price'],
+  ['pricing_pro_pill','Pro pill'],
   ['pricing_custom_name','Custom name'],
   ['pricing_custom_price','Custom price'],
-  ['footer_about','Footer about'],
-  ['footer_email','Footer email'],
-  ['footer_legal','Footer legal'],
+];
+const navFields=[
+  ['site_tagline','Tagline (under logo if used)'],
+  ['nav_logo_suffix','Logo suffix to highlight (e.g. 48)'],
+  ['nav_link_services','Nav: Services'],
+  ['nav_link_proof','Nav: Proof'],
+  ['nav_link_pricing','Nav: Pricing'],
+  ['nav_link_faq','Nav: FAQ'],
+  ['whatsapp_prefill','WhatsApp prefill message'],
+];
+const heroExtrasFields=[
+  ['hero_trust_stars','Hero trust stars (★ 4.9/5)'],
+  ['hero_float_title','Hero float title (Live store preview)'],
+  ['hero_float_sub','Hero float sub (Checkout tested)'],
+  ['hero_float_stat','Hero float stat (3.2%)'],
+  ['hero_float_stat_label','Hero float stat label (conversion)'],
+  ['social_proof_title','Social proof title'],
 ];
 const howFields=[
   ['how_step_1_title','Step 1 title'],['how_step_1_desc','Step 1 desc'],
@@ -106,18 +120,43 @@ const pricingFields=[
   ['lead_heading','Lead heading'],
   ['lead_subheading','Lead sub'],
 ];
+const leadSideFields=[
+  ['lead_side_heading','Lead side heading'],
+  ['lead_side_sub','Lead side sub'],
+  ['lead_side_tick1','Lead tick 1'],
+  ['lead_side_tick2','Lead tick 2'],
+  ['lead_side_tick3','Lead tick 3'],
+  ['lead_side_tick4','Lead tick 4'],
+  ['lead_side_whatsapp','Lead WhatsApp button'],
+  ['lead_side_book','Lead Book button'],
+  ['lead_side_footer','Lead side footer (Avg response)'],
+];
+const footerFields=[
+  ['footer_about','Footer about'],
+  ['footer_email','Footer email'],
+  ['footer_contact_title','Footer Contact title'],
+  ['footer_links_title','Footer Links title'],
+  ['footer_whatsapp_label','Footer WhatsApp label'],
+  ['footer_legal','Footer legal'],
+];
 
 function buildForm(containerId, fields){
   const c=document.getElementById(containerId);
+  if(!c) return;
   c.innerHTML=fields.map(([k,label])=>{
-    const isLong = k.includes('headline')||k.includes('subheading')||k.includes('about')||k.includes('desc');
-    const tag = isLong? 'textarea':'input';
+    const isLong = k.includes('headline')||k.includes('subheading')||k.includes('about')||k.includes('desc')||k.includes('tick')||k.includes('prefill')||k.includes('footer');
+    const isJson = k.includes('features') || k.startsWith('pricing_') && k.includes('features');
+    const tag = isJson ? 'textarea' : (isLong? 'textarea':'input');
     return `<div class="field"><label>${esc(label)} <span class="muted" style="font-weight:400">(${k})</span></label><${tag} data-key="${k}" ${tag==='textarea'?'rows="2"':''}></${tag}></div>`;
   }).join('');
 }
 buildForm('contentForm', contentFields);
+buildForm('navForm', navFields);
+buildForm('heroExtrasForm', heroExtrasFields);
 buildForm('howForm', howFields);
 buildForm('pricingForm', pricingFields);
+buildForm('leadSideForm', leadSideFields);
+buildForm('footerForm', footerFields);
 
 async function loadContent(){
   const r=await fetch('/api/content');
@@ -141,6 +180,32 @@ async function loadContent(){
   document.getElementById('thBook').value = j.booking_link||'';
   document.getElementById('thUrgEn').value = String(j.urgency_enabled||'false');
   document.getElementById('thUrgText').value = j.urgency_text||'';
+  // advanced: show any keys not in known lists
+  const known = new Set([
+    ...contentFields.map(([k])=>k), ...navFields.map(([k])=>k), ...heroExtrasFields.map(([k])=>k),
+    ...howFields.map(([k])=>k), ...pricingFields.map(([k])=>k), ...leadSideFields.map(([k])=>k), ...footerFields.map(([k])=>k),
+    'testimonials','faq_items','theme_primary','theme_accent','theme_bg','theme_text','theme_button','theme_font','whatsapp_number','booking_link','urgency_enabled','urgency_text'
+  ]);
+  const advancedKeys = Object.keys(j).filter(k=> !known.has(k));
+  const advContainer = document.getElementById('advancedForm');
+  if(advContainer){
+    if(advancedKeys.length===0){
+      advContainer.innerHTML = '<span class="muted" style="font-size:12px">All keys are covered above. Add new content via API and it will appear here.</span>';
+    } else {
+      advContainer.innerHTML = advancedKeys.map(k=>{
+        const v=j[k];
+        const val = v==null? '' : (typeof v==='string'? v : JSON.stringify(v, null, 2));
+        const isLong = val.length>80 || k.includes('heading') || k.includes('desc');
+        const tag = isLong ? 'textarea' : 'input';
+        return `<div class="field"><label>${esc(k)} <span class="muted" style="font-weight:400">(${k})</span></label><${tag} data-key="${k}" ${tag==='textarea'?'rows="2"':''}>${esc(val)}</${tag}></div>`;
+      }).join('');
+      // populate values after render
+      advContainer.querySelectorAll('[data-key]').forEach(el=>{
+        const k=el.dataset.key; const v=j[k];
+        el.value = v==null? '' : (typeof v==='string'? v : JSON.stringify(v));
+      });
+    }
+  }
 }
 
 document.getElementById('saveContent').addEventListener('click', async ()=>{

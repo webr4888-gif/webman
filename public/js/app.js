@@ -42,16 +42,34 @@ async function loadContent(){
     // helper to set text
     const set=(id,val)=>{ const el=document.getElementById(id); if(el && val!=null) el.textContent=String(val); };
     const setHtml=(id,val)=>{ const el=document.getElementById(id); if(el && val!=null) el.textContent=String(val); };
+    // nav links (data-i bindings)
+    document.querySelectorAll('[data-i]').forEach(el=>{
+      const k=el.getAttribute('data-i');
+      if(k && c[k]!=null) el.textContent = String(c[k]);
+    });
 
     // nav / logo
-    if(c.site_logo_text) document.getElementById('logoText').innerHTML = escapeHtml(c.site_logo_text).replace('48','<span>48</span>');
+    if(c.site_logo_text) {
+      const suffix = c.nav_logo_suffix || '48';
+      const logo = String(c.site_logo_text);
+      // keep suffix highlighted if present
+      if(suffix && logo.includes(suffix)) document.getElementById('logoText').innerHTML = escapeHtml(logo).replace(suffix, `<span>${escapeHtml(suffix)}</span>`);
+      else document.getElementById('logoText').textContent = logo;
+    }
+    if(c.site_tagline) { const el=document.getElementById('siteTagline'); if(el) el.textContent=String(c.site_tagline); }
     // hero
     set('heroHeadline', c.hero_headline);
     set('heroSub', c.hero_subheadline);
     set('heroBadge', c.hero_badge);
+    set('heroStars', c.hero_trust_stars);
+    set('heroFloatTitle', c.hero_float_title);
+    set('heroFloatSub', c.hero_float_sub);
+    set('heroFloatStat', c.hero_float_stat);
+    set('heroFloatLabel', c.hero_float_stat_label);
     if(c.hero_image) document.getElementById('heroImg').src = c.hero_image;
     if(c.hero_cta_primary) document.getElementById('heroBook').textContent = c.hero_cta_primary;
     if(c.hero_cta_secondary) document.getElementById('heroWhatsapp').textContent = c.hero_cta_secondary;
+    if(c.whatsapp_prefill) { /* used for waLink below */ }
     if(c.cta_book_label){ document.getElementById('navBook').textContent=c.cta_book_label; }
     if(c.cta_whatsapp_label){ document.getElementById('navWhatsapp').textContent=c.cta_whatsapp_label; }
 
@@ -103,6 +121,7 @@ async function loadContent(){
     set('priceProP', c.pricing_pro_price);
     set('priceCustomN', c.pricing_custom_name);
     set('priceCustomP', c.pricing_custom_price);
+    set('pricingProPill', c.pricing_pro_pill);
     // features (stored as JSON strings)
     function renderFeatures(id, val){
       const el=document.getElementById(id);
@@ -120,8 +139,20 @@ async function loadContent(){
     set('faqP', c.faq_subheading);
     set('leadH', c.lead_heading);
     set('leadP', c.lead_subheading);
+    set('leadSideHeading', c.lead_side_heading);
+    set('leadSideSub', c.lead_side_sub);
+    set('leadTick1', c.lead_side_tick1);
+    set('leadTick2', c.lead_side_tick2);
+    set('leadTick3', c.lead_side_tick3);
+    set('leadTick4', c.lead_side_tick4);
+    if(c.lead_side_whatsapp) document.getElementById('sideWhatsapp').textContent = c.lead_side_whatsapp;
+    if(c.lead_side_book) document.getElementById('sideBook').textContent = c.lead_side_book;
+    set('leadSideFooter', c.lead_side_footer);
     set('footerAbout', c.footer_about);
     set('footerEmail', c.footer_email);
+    set('footerContactTitle', c.footer_contact_title);
+    set('footerLinksTitle', c.footer_links_title);
+    if(c.footer_whatsapp_label) document.getElementById('footerWhatsapp').textContent = c.footer_whatsapp_label;
     set('footerLegal', c.footer_legal);
 
     // testimonials
