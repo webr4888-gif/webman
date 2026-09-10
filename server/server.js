@@ -59,13 +59,15 @@ const upload = multer({
 function authMiddleware(req, res, next) {
   const hdr = req.headers.authorization || '';
   const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  if (!token) return res.status(401).json({ error: 'Unauthorized — please login again' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
     next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+  } catch (e) {
+    // distinguish expiry for better UX
+    const msg = e && e.name === 'TokenExpiredError' ? 'Session expired — please login again' : 'Invalid token — please logout and login again';
+    return res.status(401).json({ error: msg });
   }
 }
 

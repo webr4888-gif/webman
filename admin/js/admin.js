@@ -348,27 +348,45 @@ async function doPublish(scope, msgElId, timeElId){
   const btn=document.getElementById(btnId);
   const msgEl=document.getElementById(msgElId);
   const timeEl=timeElId?document.getElementById(timeElId):null;
+  // check auth first — if token invalid/expired, force re-login instead of "invalid token"
+  const tok=getToken();
+  if(!tok){
+    if(msgEl) msgEl.textContent='Not logged in — please login again';
+    showLogin(); return;
+  }
   const payload=await collectPricingPayload(); if(!payload) return;
   if(btn) { btn.disabled=true; btn.textContent='Publishing…'; }
   if(msgEl) msgEl.textContent='Saving & publishing…';
   try{
     // first ensure latest edits are saved
     const r1=await fetch('/api/content',{method:'PUT',headers:headers(),body:JSON.stringify(payload)});
-    if(!r1.ok){ const je=await r1.json(); throw new Error(je.error||'Save failed'); }
+    if(!r1.ok){
+      const je=await r1.json().catch(()=>({error:'Save failed'}));
+      if(r1.status===401) throw new Error('Session expired — please logout and login again');
+      throw new Error(je.error||'Save failed ('+r1.status+')');
+    }
     // then mark published
     const r2=await fetch('/api/content/publish',{method:'POST',headers:headers()});
-    const j2=await r2.json();
-    if(!r2.ok) throw new Error(j2.error||'Publish failed');
+    const j2=await r2.json().catch(()=>({error:'Publish failed'}));
+    if(!r2.ok){
+      if(r2.status===401) throw new Error('Session expired — please logout and login again (invalid token)');
+      throw new Error(j2.error||'Publish failed ('+r2.status+')');
+    }
     const when=new Date(j2.published_at).toLocaleString();
     if(msgEl) msgEl.textContent='Published ✓ — live on site';
+    if(msgEl) msgEl.style.color='#16a34a';
     if(timeEl) timeEl.textContent='Last published: '+when;
     // also update pricing msg if global publish
     if(scope!=='pricing'){ const pm=document.getElementById('pricingMsg'); if(pm) pm.textContent=''; }
   }catch(e){
-    if(msgEl) msgEl.textContent=e.message;
+    if(msgEl){ msgEl.textContent=e.message; msgEl.style.color='#ef4444'; }
+    // if auth error, show login
+    if(String(e.message).toLowerCase().includes('session expired') || String(e.message).toLowerCase().includes('invalid token') || String(e.message).toLowerCase().includes('unauthorized')){
+      setTimeout(()=>{ showLogin(); }, 1200);
+    }
   }finally{
     if(btn) { btn.disabled=false; btn.textContent= scope==='pricing' ? 'Publish pricing ✓' : 'Publish all →'; }
-    setTimeout(()=>{ if(msgEl && msgEl.textContent.includes('Published')) msgEl.textContent=''; },3500);
+    setTimeout(()=>{ if(msgEl && msgEl.textContent.includes('Published')) { msgEl.textContent=''; msgEl.style.color=''; } },3500);
   }
 }
 document.getElementById('publishBtn')?.addEventListener('click', ()=>doPublish('all','publishMsg','publishTime'));
