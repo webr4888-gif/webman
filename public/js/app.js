@@ -48,13 +48,53 @@ async function loadContent(){
       if(k && c[k]!=null) el.textContent = String(c[k]);
     });
 
-    // nav / logo
-    if(c.site_logo_text) {
+    // nav / logo — text fallback + image logo + favicon
+    const siteLogo = (c.site_logo || '').toString().trim();
+    const siteLogoTextVal = (c.site_logo_text || '').toString().trim();
+    const logoImg = document.getElementById('siteLogoImg');
+    const logoLink = document.getElementById('logoLink');
+    const logoTextEl = document.getElementById('logoText');
+    const footerLogoImg = document.getElementById('footerLogoImg');
+    const footerLogoWrap = document.getElementById('footerLogoWrap');
+    // set logo text first (fallback)
+    if(siteLogoTextVal) {
+      const suffix = c.nav_logo_suffix || '48';
+      const logo = siteLogoTextVal;
+      if(suffix && logo.includes(suffix)) logoTextEl.innerHTML = escapeHtml(logo).replace(escapeHtml(suffix), `<span>${escapeHtml(suffix)}</span>`);
+      else logoTextEl.textContent = logo;
+      // also sync footer text
+      const ft=document.getElementById('footerLogoText');
+      if(ft) ft.textContent = logo;
+    } else if(c.site_logo_text) {
       const suffix = c.nav_logo_suffix || '48';
       const logo = String(c.site_logo_text);
-      // keep suffix highlighted if present
-      if(suffix && logo.includes(suffix)) document.getElementById('logoText').innerHTML = escapeHtml(logo).replace(suffix, `<span>${escapeHtml(suffix)}</span>`);
-      else document.getElementById('logoText').textContent = logo;
+      if(suffix && logo.includes(suffix)) logoTextEl.innerHTML = escapeHtml(logo).replace(suffix, `<span>${escapeHtml(suffix)}</span>`);
+      else logoTextEl.textContent = logo;
+    }
+    // if image logo is configured, show it and hide text via CSS class
+    if(siteLogo){
+      logoImg.src = siteLogo;
+      logoImg.style.display = 'block';
+      logoImg.alt = siteLogoTextVal || 'site logo';
+      if(logoLink) logoLink.classList.add('has-image');
+      if(footerLogoImg){ footerLogoImg.src = siteLogo; footerLogoImg.style.display='block'; if(footerLogoWrap) footerLogoWrap.classList.add('has-image'); }
+      logoImg.onerror = ()=>{ logoImg.style.display='none'; if(logoLink) logoLink.classList.remove('has-image'); if(footerLogoImg) footerLogoImg.style.display='none'; if(footerLogoWrap) footerLogoWrap.classList.remove('has-image'); };
+    } else {
+      logoImg.style.display='none';
+      if(logoLink) logoLink.classList.remove('has-image');
+      if(footerLogoImg) footerLogoImg.style.display='none';
+      if(footerLogoWrap) footerLogoWrap.classList.remove('has-image');
+    }
+
+    // favicon
+    const siteFavicon = (c.site_favicon || '').toString().trim();
+    if(siteFavicon){
+      const favEl=document.getElementById('favicon');
+      const favPngEl=document.getElementById('favicon-png');
+      const appleEl=document.getElementById('appleTouchIcon');
+      if(favEl) favEl.href = siteFavicon;
+      if(favPngEl) favPngEl.href = siteFavicon;
+      if(appleEl) appleEl.href = siteFavicon;
     }
     if(c.site_tagline) { const el=document.getElementById('siteTagline'); if(el) el.textContent=String(c.site_tagline); }
     // hero

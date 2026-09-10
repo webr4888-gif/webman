@@ -99,6 +99,22 @@ app.put('/api/content', authMiddleware, async (req, res) => {
   res.json({ ok: true, content: await getAllContent() });
 });
 
+// publish — marks content as live and stamps time
+app.post('/api/content/publish', authMiddleware, async (req, res) => {
+  const now = new Date().toISOString();
+  const by = req.user?.username || 'admin';
+  await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run('site_published_at', now);
+  await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run('site_published_by', by);
+  await db.prepare('INSERT OR REPLACE INTO content (key, value) VALUES (?, ?)').run('site_publish_status', 'published');
+  res.json({ ok: true, published_at: now, published_by: by });
+});
+app.get('/api/content/publish', async (req, res) => {
+  const at = await getContentValue('site_published_at');
+  const by = await getContentValue('site_published_by');
+  const status = await getContentValue('site_publish_status');
+  res.json({ published_at: at || null, published_by: by || null, status: status || 'draft' });
+});
+
 // single key update
 app.put('/api/content/:key', authMiddleware, async (req, res) => {
   const { key } = req.params;
@@ -145,6 +161,13 @@ app.put('/api/media/reorder', authMiddleware, async (req, res) => {
     await db.prepare('UPDATE media SET sort_order = ? WHERE id = ?').run(idx+1, Number(orderedIds[idx]));
   }
   res.json({ ok: true });
+});
+
+// ---------- API: generic upload for logo/favicon ----------
+app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded. Field name must be \"image\"' });
+  const url = '/uploads/' + req.file.filename;
+  res.json({ ok: true, url, filename: req.file.filename });
 });
 
 // ---------- API: leads ----------

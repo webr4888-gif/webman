@@ -76,15 +76,6 @@ const contentFields=[
   ['sales_subheading','Sales sub'],
   ['how_heading','How heading'],
   ['how_subheading','How sub'],
-  ['pricing_heading','Pricing heading'],
-  ['pricing_subheading','Pricing sub'],
-  ['pricing_starter_name','Starter name'],
-  ['pricing_starter_price','Starter price'],
-  ['pricing_pro_name','Pro name'],
-  ['pricing_pro_price','Pro price'],
-  ['pricing_pro_pill','Pro pill'],
-  ['pricing_custom_name','Custom name'],
-  ['pricing_custom_price','Custom price'],
 ];
 const navFields=[
   ['site_tagline','Tagline (under logo if used)'],
@@ -110,9 +101,6 @@ const howFields=[
   ['how_step_4_title','Step 4 title'],['how_step_4_desc','Step 4 desc'],
 ];
 const pricingFields=[
-  ['pricing_starter_features','Starter features (JSON array)'],
-  ['pricing_pro_features','Pro features (JSON)'],
-  ['pricing_custom_features','Custom features (JSON)'],
   ['testimonials_heading','Testimonials heading'],
   ['testimonials_subheading','Testimonials sub'],
   ['faq_heading','FAQ heading'],
@@ -154,9 +142,33 @@ buildForm('contentForm', contentFields);
 buildForm('navForm', navFields);
 buildForm('heroExtrasForm', heroExtrasFields);
 buildForm('howForm', howFields);
-buildForm('pricingForm', pricingFields);
+// pricingForm no longer used — replaced by dedicated pricing editor, but keep empty to avoid errors
+const pf=document.getElementById('pricingForm'); if(pf) pf.innerHTML='<span class="muted" style="font-size:12px">Pricing is now edited in the dedicated card above.</span>';
 buildForm('leadSideForm', leadSideFields);
 buildForm('footerForm', footerFields);
+
+// pricing helpers: JSON array <-> lines
+function jsonToLines(val){
+  if(!val) return '';
+  try{
+    const arr = typeof val==='string' ? JSON.parse(val) : val;
+    if(Array.isArray(arr)) return arr.join('\n');
+    return String(val);
+  }catch{ return String(val); }
+}
+function linesToJson(text){
+  const arr = String(text||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  return JSON.stringify(arr);
+}
+
+function updateLogoFaviconPreview(){
+  const logoVal = (document.getElementById('logoUrl')?.value||'').trim();
+  const favVal = (document.getElementById('faviconUrl')?.value||'').trim();
+  const lp=document.getElementById('logoPreview'), lh=document.getElementById('logoPreviewHint');
+  const fp=document.getElementById('faviconPreview'), fh=document.getElementById('faviconPreviewHint');
+  if(logoVal){ if(lp){ lp.src=logoVal; lp.style.display='block'; } if(lh) lh.style.display='none'; } else { if(lp) lp.style.display='none'; if(lh) lh.style.display='inline'; }
+  if(favVal){ if(fp){ fp.src=favVal; fp.style.display='block'; } if(fh) fh.style.display='none'; } else { if(fp) fp.style.display='none'; if(fh) fh.style.display='inline'; }
+}
 
 async function loadContent(){
   const r=await fetch('/api/content');
@@ -169,6 +181,17 @@ async function loadContent(){
   });
   document.getElementById('testimonialsJson').value = typeof j.testimonials==='string'? j.testimonials : JSON.stringify(j.testimonials||[],null,2);
   document.getElementById('faqJson').value = typeof j.faq_items==='string'? j.faq_items : JSON.stringify(j.faq_items||[],null,2);
+  // logo & favicon dedicated inputs (persisted via data-key hidden sync + visible inputs)
+  const logoUrlEl=document.getElementById('logoUrl');
+  const favUrlEl=document.getElementById('faviconUrl');
+  if(logoUrlEl) logoUrlEl.value = (j.site_logo||'');
+  if(favUrlEl) favUrlEl.value = (j.site_favicon||'');
+  updateLogoFaviconPreview();
+  // pricing features (lines <-> JSON)
+  const sFeat=document.getElementById('pStarterFeat'), pFeat=document.getElementById('pProFeat'), cFeat=document.getElementById('pCustomFeat');
+  if(sFeat) sFeat.value = jsonToLines(j.pricing_starter_features);
+  if(pFeat) pFeat.value = jsonToLines(j.pricing_pro_features);
+  if(cFeat) cFeat.value = jsonToLines(j.pricing_custom_features);
   // theme
   document.getElementById('thPrimary').value = j.theme_primary||'#6C5CE7';
   document.getElementById('thAccent').value = j.theme_accent||'#00cec9';
@@ -180,11 +203,32 @@ async function loadContent(){
   document.getElementById('thBook').value = j.booking_link||'';
   document.getElementById('thUrgEn').value = String(j.urgency_enabled||'false');
   document.getElementById('thUrgText').value = j.urgency_text||'';
+  // sync logo/favicon visible inputs to hidden data-key mechanism for save
+  // ensure payload includes site_logo/site_favicon even though they are not in grid2 forms
+  // create hidden data-key mirrors if not present
+  function ensureHiddenKey(key, value){
+    let el=document.querySelector(`[data-key="${key}"]`);
+    if(!el){
+      el=document.createElement('input');
+      el.type='hidden';
+      el.dataset.key=key;
+      document.body.appendChild(el);
+    }
+    el.value=value||'';
+  }
+  ensureHiddenKey('site_logo', logoUrlEl?.value||'');
+  ensureHiddenKey('site_favicon', favUrlEl?.value||'');
+  // keep hidden in sync on input
+  if(logoUrlEl) logoUrlEl.addEventListener('input', ()=>{ ensureHiddenKey('site_logo', logoUrlEl.value); updateLogoFaviconPreview(); });
+  if(favUrlEl) favUrlEl.addEventListener('input', ()=>{ ensureHiddenKey('site_favicon', favUrlEl.value); updateLogoFaviconPreview(); });
+
   // advanced: show any keys not in known lists
+  const pricingKeys=['pricing_heading','pricing_subheading','pricing_starter_name','pricing_starter_price','pricing_starter_features','pricing_pro_name','pricing_pro_price','pricing_pro_pill','pricing_pro_features','pricing_custom_name','pricing_custom_price','pricing_custom_features'];
   const known = new Set([
     ...contentFields.map(([k])=>k), ...navFields.map(([k])=>k), ...heroExtrasFields.map(([k])=>k),
     ...howFields.map(([k])=>k), ...pricingFields.map(([k])=>k), ...leadSideFields.map(([k])=>k), ...footerFields.map(([k])=>k),
-    'testimonials','faq_items','theme_primary','theme_accent','theme_bg','theme_text','theme_button','theme_font','whatsapp_number','booking_link','urgency_enabled','urgency_text'
+    ...pricingKeys,
+    'testimonials','faq_items','theme_primary','theme_accent','theme_bg','theme_text','theme_button','theme_font','whatsapp_number','booking_link','urgency_enabled','urgency_text','site_logo','site_favicon'
   ]);
   const advancedKeys = Object.keys(j).filter(k=> !known.has(k));
   const advContainer = document.getElementById('advancedForm');
@@ -208,22 +252,139 @@ async function loadContent(){
   }
 }
 
-document.getElementById('saveContent').addEventListener('click', async ()=>{
+// logo / favicon upload handlers
+async function uploadBrandingFile(type){
+  const fileEl = document.getElementById(type==='logo' ? 'logoFile' : 'faviconFile');
+  const urlEl = document.getElementById(type==='logo' ? 'logoUrl' : 'faviconUrl');
+  const msgEl = document.getElementById(type==='logo' ? 'logoMsg' : 'faviconMsg');
+  const file = fileEl?.files?.[0];
+  if(!file){ msgEl.textContent='Pick a file first'; setTimeout(()=>msgEl.textContent='',2000); return; }
+  if(file.size > 8*1024*1024){ msgEl.textContent='File too large (max 8MB)'; return; }
+  msgEl.textContent='Uploading…';
+  try{
+    const fd=new FormData(); fd.append('image', file);
+    const r=await fetch('/api/upload',{method:'POST',headers:{Authorization: headers().Authorization}, body:fd});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Upload failed');
+    urlEl.value=j.url;
+    // sync hidden key
+    let hk=document.querySelector(`[data-key="${type==='logo'?'site_logo':'site_favicon'}"]`);
+    if(hk) hk.value=j.url; else { hk=document.createElement('input'); hk.type='hidden'; hk.dataset.key=type==='logo'?'site_logo':'site_favicon'; hk.value=j.url; document.body.appendChild(hk); }
+    updateLogoFaviconPreview();
+    msgEl.textContent='Uploaded ✓ — click Save all content';
+    fileEl.value='';
+  }catch(e){ msgEl.textContent=e.message; }
+  setTimeout(()=>{ if(msgEl.textContent.includes('Uploaded')) msgEl.textContent=''; },3500);
+}
+document.getElementById('logoUploadBtn')?.addEventListener('click', ()=>uploadBrandingFile('logo'));
+document.getElementById('faviconUploadBtn')?.addEventListener('click', ()=>uploadBrandingFile('favicon'));
+document.getElementById('logoClearBtn')?.addEventListener('click', ()=>{
+  document.getElementById('logoUrl').value=''; document.getElementById('logoFile').value='';
+  const hk=document.querySelector('[data-key="site_logo"]'); if(hk) hk.value='';
+  updateLogoFaviconPreview(); document.getElementById('logoMsg').textContent='Cleared — save to apply';
+});
+document.getElementById('faviconClearBtn')?.addEventListener('click', ()=>{
+  document.getElementById('faviconUrl').value=''; document.getElementById('faviconFile').value='';
+  const hk=document.querySelector('[data-key="site_favicon"]'); if(hk) hk.value='';
+  updateLogoFaviconPreview(); document.getElementById('faviconMsg').textContent='Cleared — save to apply';
+});
+
+async function collectPricingPayload(){
+  // ensure logo/favicon hidden keys are fresh before save
+  const lu=document.getElementById('logoUrl')?.value||'';
+  const fu=document.getElementById('faviconUrl')?.value||'';
+  let lhk=document.querySelector('[data-key="site_logo"]'); if(!lhk){ lhk=document.createElement('input'); lhk.type='hidden'; lhk.dataset.key='site_logo'; document.body.appendChild(lhk); } lhk.value=lu;
+  let fhk=document.querySelector('[data-key="site_favicon"]'); if(!fhk){ fhk=document.createElement('input'); fhk.type='hidden'; fhk.dataset.key='site_favicon'; document.body.appendChild(fhk); } fhk.value=fu;
   const payload={};
   document.querySelectorAll('[data-key]').forEach(el=> payload[el.dataset.key]=el.value);
+  // pricing features: lines -> JSON
+  payload.pricing_starter_features = linesToJson(document.getElementById('pStarterFeat')?.value||'');
+  payload.pricing_pro_features = linesToJson(document.getElementById('pProFeat')?.value||'');
+  payload.pricing_custom_features = linesToJson(document.getElementById('pCustomFeat')?.value||'');
   payload.testimonials = document.getElementById('testimonialsJson').value;
   payload.faq_items = document.getElementById('faqJson').value;
   // validate JSON fields
   for(const k of ['pricing_starter_features','pricing_pro_features','pricing_custom_features','testimonials','faq_items']){
     const v=payload[k];
-    if(v){ try{ JSON.parse(v); }catch(e){ alert('Invalid JSON for '+k+': '+e.message); return; } }
+    if(v){ try{ JSON.parse(v); }catch(e){ alert('Invalid JSON for '+k+': '+e.message); return null; } }
   }
+  return payload;
+}
+document.getElementById('saveContent').addEventListener('click', async ()=>{
+  const payload=await collectPricingPayload(); if(!payload) return;
   document.getElementById('saveMsg').textContent='Saving…';
   const r=await fetch('/api/content',{method:'PUT',headers:headers(),body:JSON.stringify(payload)});
   const j=await r.json();
   document.getElementById('saveMsg').textContent = r.ok? 'Saved ✓' : (j.error||'Failed');
   setTimeout(()=>document.getElementById('saveMsg').textContent='',2000);
 });
+document.getElementById('savePricing')?.addEventListener('click', async ()=>{
+  const payload=await collectPricingPayload(); if(!payload) return;
+  // only send pricing keys to be explicit, but we send all for consistency
+  const pricingOnly={
+    pricing_heading: payload.pricing_heading,
+    pricing_subheading: payload.pricing_subheading,
+    pricing_starter_name: payload.pricing_starter_name,
+    pricing_starter_price: payload.pricing_starter_price,
+    pricing_starter_features: payload.pricing_starter_features,
+    pricing_pro_name: payload.pricing_pro_name,
+    pricing_pro_price: payload.pricing_pro_price,
+    pricing_pro_pill: payload.pricing_pro_pill,
+    pricing_pro_features: payload.pricing_pro_features,
+    pricing_custom_name: payload.pricing_custom_name,
+    pricing_custom_price: payload.pricing_custom_price,
+    pricing_custom_features: payload.pricing_custom_features,
+  };
+  document.getElementById('pricingMsg').textContent='Saving…';
+  const r=await fetch('/api/content',{method:'PUT',headers:headers(),body:JSON.stringify(pricingOnly)});
+  const j=await r.json();
+  document.getElementById('pricingMsg').textContent = r.ok? 'Saved ✓ — live on site' : (j.error||'Failed');
+  if(r.ok){ document.getElementById('saveMsg').textContent='Pricing saved ✓'; setTimeout(()=>document.getElementById('saveMsg').textContent='',2000); }
+  setTimeout(()=>document.getElementById('pricingMsg').textContent='',3000);
+});
+// publish handlers
+async function doPublish(scope, msgElId, timeElId){
+  const btnId = scope==='pricing' ? 'publishPricing' : 'publishBtn';
+  const btn=document.getElementById(btnId);
+  const msgEl=document.getElementById(msgElId);
+  const timeEl=timeElId?document.getElementById(timeElId):null;
+  const payload=await collectPricingPayload(); if(!payload) return;
+  if(btn) { btn.disabled=true; btn.textContent='Publishing…'; }
+  if(msgEl) msgEl.textContent='Saving & publishing…';
+  try{
+    // first ensure latest edits are saved
+    const r1=await fetch('/api/content',{method:'PUT',headers:headers(),body:JSON.stringify(payload)});
+    if(!r1.ok){ const je=await r1.json(); throw new Error(je.error||'Save failed'); }
+    // then mark published
+    const r2=await fetch('/api/content/publish',{method:'POST',headers:headers()});
+    const j2=await r2.json();
+    if(!r2.ok) throw new Error(j2.error||'Publish failed');
+    const when=new Date(j2.published_at).toLocaleString();
+    if(msgEl) msgEl.textContent='Published ✓ — live on site';
+    if(timeEl) timeEl.textContent='Last published: '+when;
+    // also update pricing msg if global publish
+    if(scope!=='pricing'){ const pm=document.getElementById('pricingMsg'); if(pm) pm.textContent=''; }
+  }catch(e){
+    if(msgEl) msgEl.textContent=e.message;
+  }finally{
+    if(btn) { btn.disabled=false; btn.textContent= scope==='pricing' ? 'Publish pricing ✓' : 'Publish all →'; }
+    setTimeout(()=>{ if(msgEl && msgEl.textContent.includes('Published')) msgEl.textContent=''; },3500);
+  }
+}
+document.getElementById('publishBtn')?.addEventListener('click', ()=>doPublish('all','publishMsg','publishTime'));
+document.getElementById('publishPricing')?.addEventListener('click', ()=>doPublish('pricing','publishPricingMsg',null));
+
+// load publish status on init
+async function loadPublishStatus(){
+  try{
+    const r=await fetch('/api/content/publish');
+    const j=await r.json();
+    if(j.published_at){
+      const el=document.getElementById('publishTime');
+      if(el) el.textContent='Last published: '+new Date(j.published_at).toLocaleString() + (j.published_by?' by '+j.published_by:'');
+    }
+  }catch{}
+}
 
 // ---------- MEDIA ----------
 async function loadMedia(){
@@ -417,6 +578,6 @@ document.getElementById('changePw').addEventListener('click', async ()=>{
   if(r.ok){ document.getElementById('pwCur').value=''; document.getElementById('pwNew').value=''; }
 });
 
-async function loadAll(){ await loadContent(); await loadMedia(); await loadLeads(); await loadAnalytics(); }
+async function loadAll(){ await loadContent(); await loadPublishStatus(); await loadMedia(); await loadLeads(); await loadAnalytics(); }
 
 checkAuth();

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>webr48 — Done-for-you dropshipping stores</title>
   <meta name="description" content="webr48 builds done-for-you dropshipping stores. Launch in 7 days, ready to take orders." />
+  <link id="favicon" rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link id="favicon-png" rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
+  <link id="appleTouchIcon" rel="apple-touch-icon" sizes="180x180" href="/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css" />
@@ -14,7 +17,10 @@
 
   <nav class="navbar">
     <div class="container nav-inner">
-      <a href="#" class="logo" id="logoText">webr<span>48</span></a>
+      <a href="#" class="logo" id="logoLink">
+        <img id="siteLogoImg" src="" alt="webr48 logo" style="display:none" />
+        <span id="logoText">webr<span>48</span></span>
+      </a>
       <div class="nav-links" id="navLinks">
         <a href="#services" data-i="nav_link_services">Services</a>
         <a href="#portfolio" data-i="nav_link_proof">Proof</a>
@@ -42,7 +48,7 @@
       <div class="hero-trust">
         <span id="heroStars">★ 4.9/5 average</span>
         <span>•</span>
-        <span id="trustLine"><strong>127</strong> stores launched • <strong>₦48M+</strong> verified sales</span>
+        <span id="trustLine"><strong>127</strong> stores launched • <strong>$48K+</strong> verified sales</span>
       </div>
     </div>
     <div class="hero-visual">
@@ -66,7 +72,7 @@
   <section class="container" style="padding:18px 0 8px">
     <div class="stats">
       <div class="stat"><b id="statStores">127</b><span id="statStoresL">Stores launched</span></div>
-      <div class="stat"><b id="statSales">₦48M+</b><span id="statSalesL">Verified student sales</span></div>
+      <div class="stat"><b id="statSales">$48K+</b><span id="statSalesL">Verified student sales</span></div>
       <div class="stat"><b id="statRating">4.9/5</b><span id="statRatingL">Average satisfaction</span></div>
       <div class="stat"><b id="statSupport">14 days</b><span id="statSupportL">Free post-launch support</span></div>
     </div>
@@ -120,14 +126,14 @@
       <div class="pricing">
         <div class="price-card">
           <h3 id="priceStarterN">Starter</h3>
-          <div class="price" id="priceStarterP">₦120,000</div>
+          <div class="price" id="priceStarterP">$120</div>
           <ul id="priceStarterF"></ul>
           <a class="btn btn-ghost" href="#lead" data-track="pricing-starter">Get Started</a>
         </div>
         <div class="price-card featured">
           <div id="pricingProPill" class="pill" style="align-self:flex-start;background:#6C5CE7;color:#fff;border-color:#6C5CE7">Most popular</div>
           <h3 id="priceProN" style="margin-top:10px">Pro — Most Popular</h3>
-          <div class="price" id="priceProP">₦220,000</div>
+          <div class="price" id="priceProP">$220</div>
           <ul id="priceProF"></ul>
           <a class="btn btn-primary" href="#lead" data-track="pricing-pro">Choose Pro →</a>
         </div>
@@ -187,9 +193,9 @@
               <label>Budget *</label>
               <select name="budget" required>
                 <option value="">Select budget</option>
-                <option>Under ₦50k</option>
-                <option>₦50k–150k</option>
-                <option>₦150k+</option>
+                <option>Under $50</option>
+                <option>$50–150</option>
+                <option>$150+</option>
                 <option>Not sure yet</option>
               </select>
               <div class="err" data-err="budget"></div>
@@ -274,7 +280,10 @@
     <div class="container">
       <div class="foot-grid">
         <div>
-          <div class="foot-logo">webr48</div>
+          <div class="foot-logo" id="footerLogoWrap">
+            <img id="footerLogoImg" src="" alt="webr48 logo" style="display:none;max-height:32px;width:auto" />
+            <span id="footerLogoText">webr48</span>
+          </div>
           <div class="foot-muted" id="footerAbout">webr48 builds done-for-you dropshipping stores that are ready to sell on day one.</div>
         </div>
         <div>

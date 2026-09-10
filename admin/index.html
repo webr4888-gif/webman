@@ -40,17 +40,71 @@
       <main class="main">
         <!-- CONTENT -->
         <section id="tab-content">
+          <div class="card"><h3>Branding — Logo & Favicon</h3>
+            <p class="muted" style="font-size:12px;margin:0 0 12px">Upload your logo and favicon images. Logo appears in the navbar & footer; favicon appears in the browser tab. Supports PNG, SVG, JPG, ICO. Recommended: logo 300×80px transparent PNG, favicon 512×512px square.</p>
+            <div class="grid2">
+              <div class="field"><label>Logo image (upload or URL)</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                  <img id="logoPreview" src="" alt="logo preview" style="max-height:40px;max-width:160px;border:1px solid #e2e8f0;border-radius:8px;padding:4px;display:none;background:#fff" />
+                  <span id="logoPreviewHint" class="muted" style="font-size:12px">No logo image — text logo is shown</span>
+                </div>
+                <input id="logoFile" type="file" accept="image/*,.ico,.svg" />
+                <input id="logoUrl" placeholder="https://... or /uploads/logo.png" style="margin-top:6px" />
+                <div style="display:flex;gap:6px;margin-top:6px"><button type="button" id="logoUploadBtn" class="btn btn-sm">Upload logo</button><button type="button" id="logoClearBtn" class="btn btn-sm">Clear logo</button><span id="logoMsg" class="muted" style="font-size:12px"></span></div>
+              </div>
+              <div class="field"><label>Favicon (upload or URL)</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                  <img id="faviconPreview" src="" alt="favicon preview" style="width:32px;height:32px;border:1px solid #e2e8f0;border-radius:6px;padding:2px;display:none;background:#fff;object-fit:contain" />
+                  <span id="faviconPreviewHint" class="muted" style="font-size:12px">No custom favicon — using /favicon.ico</span>
+                </div>
+                <input id="faviconFile" type="file" accept="image/*,.ico,.svg" />
+                <input id="faviconUrl" placeholder="https://... or /uploads/favicon.png" style="margin-top:6px" />
+                <div style="display:flex;gap:6px;margin-top:6px"><button type="button" id="faviconUploadBtn" class="btn btn-sm">Upload favicon</button><button type="button" id="faviconClearBtn" class="btn btn-sm">Clear favicon</button><span id="faviconMsg" class="muted" style="font-size:12px"></span></div>
+              </div>
+            </div>
+            <p class="muted" style="font-size:11px;margin:8px 0 0">Tip: After uploading, click “Save all content” below to persist. URL fields are saved as <code>site_logo</code> and <code>site_favicon</code> content keys.</p>
+          </div>
           <div class="card"><h3>Hero & Global</h3><div id="contentForm" class="grid2"></div></div>
           <div class="card"><h3>Navigation & Branding</h3><div id="navForm" class="grid2"></div></div>
           <div class="card"><h3>Hero Extras (float card + trust)</h3><div id="heroExtrasForm" class="grid2"></div></div>
           <div class="card"><h3>How it works</h3><div id="howForm" class="grid2"></div></div>
-          <div class="card"><h3>Pricing</h3><div id="pricingForm" class="grid2"></div></div>
+          <div class="card" style="border:2px solid #111827">
+            <h3 style="display:flex;align-items:center;gap:8px">💰 Pricing — Plans & Prices <span style="font-weight:400;font-size:12px;color:#2563EB;background:#eff6ff;border:1px solid #bfdbfe;padding:2px 8px;border-radius:999px">Editable</span></h3>
+            <p class="muted" style="font-size:12px;margin:0 0 14px">Edit plan names, prices and features here. Prices accept any text e.g. <code>$120,000</code> or <code>Custom quote</code>. Features: one per line (we save as JSON automatically).</p>
+            <div class="grid2" style="margin-bottom:16px">
+              <div class="field"><label>Pricing heading</label><input id="pricingHeading" data-key="pricing_heading" placeholder="Simple, transparent pricing" /></div>
+              <div class="field"><label>Pricing subheading</label><input id="pricingSub" data-key="pricing_subheading" placeholder="One-time build fee. You own everything..." /></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px" class="pricing-edit-grid">
+              <div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc">
+                <h4 style="margin:0 0 10px;font-size:14px">Starter</h4>
+                <div class="field"><label>Name</label><input id="pStarterName" data-key="pricing_starter_name" placeholder="Starter" /></div>
+                <div class="field" style="margin-top:8px"><label>Price *</label><input id="pStarterPrice" data-key="pricing_starter_price" placeholder="$120,000" style="font-weight:700" /></div>
+                <div class="field" style="margin-top:8px"><label>Features (one per line)</label><textarea id="pStarterFeat" rows="6" placeholder="1 niche store (up to 10 products)&#10;Premium theme + logo&#10;Payment & shipping setup"></textarea></div>
+              </div>
+              <div style="border:2px solid #111827;border-radius:12px;padding:14px;background:#fff;box-shadow:0 8px 24px rgba(17,24,39,0.08)">
+                <h4 style="margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:6px">Pro <span style="background:#111827;color:#fff;font-size:10px;padding:2px 6px;border-radius:999px">Most Popular</span></h4>
+                <div class="field"><label>Name</label><input id="pProName" data-key="pricing_pro_name" placeholder="Pro — Most Popular" /></div>
+                <div class="field" style="margin-top:8px"><label>Price *</label><input id="pProPrice" data-key="pricing_pro_price" placeholder="$220,000" style="font-weight:700" /></div>
+                <div class="field" style="margin-top:8px"><label>Pill badge</label><input id="pProPill" data-key="pricing_pro_pill" placeholder="Most popular" /></div>
+                <div class="field" style="margin-top:8px"><label>Features (one per line)</label><textarea id="pProFeat" rows="6" placeholder="Everything in Starter&#10;Up to 25 products + upsells&#10;Abandoned cart & email flows"></textarea></div>
+              </div>
+              <div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc">
+                <h4 style="margin:0 0 10px;font-size:14px">Custom</h4>
+                <div class="field"><label>Name</label><input id="pCustomName" data-key="pricing_custom_name" placeholder="Custom" /></div>
+                <div class="field" style="margin-top:8px"><label>Price *</label><input id="pCustomPrice" data-key="pricing_custom_price" placeholder="Custom quote" style="font-weight:700" /></div>
+                <div class="field" style="margin-top:8px"><label>Features (one per line)</label><textarea id="pCustomFeat" rows="6" placeholder="For established brands&#10;Multi-currency & multi-supplier&#10;Custom development"></textarea></div>
+              </div>
+            </div>
+            <style>@media(max-width:900px){ .pricing-edit-grid{grid-template-columns:1fr !important} }</style>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" id="savePricing" class="btn btn-ghost">Save pricing →</button><button type="button" id="publishPricing" class="btn btn-primary" style="background:#111827">Publish pricing ✓</button><span id="pricingMsg" class="muted" style="font-size:12px"></span><span id="publishPricingMsg" class="muted" style="font-size:12px;color:#16a34a"></span><span class="muted" style="margin-left:auto;font-size:11px">Publish makes it live instantly</span></div>
+          </div>
           <div class="card"><h3>Lead Side Panel</h3><div id="leadSideForm" class="grid2"></div></div>
           <div class="card"><h3>Footer</h3><div id="footerForm" class="grid2"></div></div>
           <div class="card"><h3>Testimonials (JSON)</h3><div class="field"><label>Array of {name, role, quote, photo}</label><textarea id="testimonialsJson" rows="6"></textarea></div></div>
           <div class="card"><h3>FAQ (JSON)</h3><div class="field"><label>Array of {q, a}</label><textarea id="faqJson" rows="6"></textarea></div></div>
           <div class="card"><h3>Everything else (auto)</h3><p class="muted" style="font-size:12px;margin:0 0 8px">Any content key not listed above appears here. Add new keys via API and they show up automatically — truly everything is editable.</p><div id="advancedForm" class="grid2"></div></div>
-          <div style="position:sticky;bottom:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;gap:8px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.08)"><button id="saveContent" class="btn btn-primary">Save all content</button><span id="saveMsg" class="muted"></span><span class="muted" style="margin-left:auto;font-size:12px">All fields above are saved together</span></div>
+          <div style="position:sticky;bottom:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;gap:8px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.08);flex-wrap:wrap"><button id="saveContent" class="btn btn-ghost">Save all content</button><button id="publishBtn" class="btn btn-primary" style="background:#111827">Publish all →</button><span id="saveMsg" class="muted"></span><span id="publishMsg" class="muted" style="color:#16a34a"></span><span id="publishTime" class="muted" style="margin-left:auto;font-size:11px"></span></div>
         </section>
 
         <!-- MEDIA -->
