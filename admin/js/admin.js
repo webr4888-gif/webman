@@ -373,9 +373,11 @@ async function doPublish(scope, msgElId, timeElId){
       throw new Error(j2.error||'Publish failed ('+r2.status+')');
     }
     const when=new Date(j2.published_at).toLocaleString();
-    if(msgEl) msgEl.textContent='Published ✓ — live on site';
+    if(msgEl) msgEl.textContent='Published ✓ — live on site (refresh frontend if needed)';
     if(msgEl) msgEl.style.color='#16a34a';
     if(timeEl) timeEl.textContent='Last published: '+when;
+    // force frontend cache bust: touch a no-op to ensure CDN not caching old content
+    try{ await fetch('/api/content?ts='+Date.now(),{cache:'no-store'}); }catch{}
     // also update pricing msg if global publish
     if(scope!=='pricing'){ const pm=document.getElementById('pricingMsg'); if(pm) pm.textContent=''; }
   }catch(e){

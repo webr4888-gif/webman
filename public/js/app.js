@@ -19,7 +19,7 @@ function escapeHtml(s){
 
 async function loadContent(){
   try{
-    const r = await fetch('/api/content');
+    const r = await fetch('/api/content?ts='+Date.now(), { cache:'no-store', headers:{'Cache-Control':'no-cache'} });
     if(!r.ok) throw new Error('content fetch failed');
     const c = await r.json();
 
@@ -370,3 +370,20 @@ document.addEventListener('click', (e)=>{
 // init
 loadContent();
 loadMedia();
+// auto-refresh frontend when admin publishes (poll published_at every 10s)
+let lastPublished=null;
+setInterval(async()=>{
+  try{
+    const r=await fetch('/api/content/publish?ts='+Date.now(),{cache:'no-store'});
+    const j=await r.json();
+    if(j.published_at && lastPublished && j.published_at!==lastPublished){
+      loadContent(); loadMedia();
+    }
+    lastPublished=j.published_at||null;
+  }catch{}
+},10000);
+// init poll baseline
+fetch('/api/content/publish?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(j=>{lastPublished=j.published_at||null}).catch(()=>{});
+
+// also refresh on visibility change (instant when tab refocused after publish)
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ loadContent(); } });

@@ -88,6 +88,9 @@ async function getContentValue(key) {
 
 // ---------- API: content ----------
 app.get('/api/content', async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.json(await getAllContent());
 });
 
@@ -111,6 +114,7 @@ app.post('/api/content/publish', authMiddleware, async (req, res) => {
   res.json({ ok: true, published_at: now, published_by: by });
 });
 app.get('/api/content/publish', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const at = await getContentValue('site_published_at');
   const by = await getContentValue('site_published_by');
   const status = await getContentValue('site_publish_status');
